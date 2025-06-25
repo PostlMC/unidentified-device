@@ -43,7 +43,6 @@ modules:
         - cc.arduino.arduinoide
         - com.discordapp.Discord
         - com.dosbox_x.DOSBox-X
-        - com.flipperdevices.qFlipper
         - com.makemkv.MakeMKV
         - com.valvesoftware.Steam
         - io.github.shiftey.Desktop
