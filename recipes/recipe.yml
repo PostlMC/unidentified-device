@@ -41,7 +41,6 @@ modules:
       # If no repo information is specified, Flathub will be used by default
       install:
         - cc.arduino.arduinoide
-        - com.cursor.Cursor
         - com.discordapp.Discord
         - com.dosbox_x.DOSBox-X
         - com.flipperdevices.qFlipper
