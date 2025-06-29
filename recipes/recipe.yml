@@ -27,10 +27,9 @@ modules:
           - git-credential-manager
           - tailscale
           - zsh
-          - 1password
-          - 1password-cli
           - firefox
           - firefox-langpacks
+          # Found the answer to this here: https://rpmfusion.org/Configuration
           - https://mirrors.rpmfusion.org/free/fedora/rpmfusion-free-release-%OS_VERSION%.noarch.rpm
           - https://mirrors.rpmfusion.org/nonfree/fedora/rpmfusion-nonfree-release-%OS_VERSION%.noarch.rpm
       # remove:
@@ -61,5 +60,9 @@ modules:
               - org.gnome.eog
               - org.mozilla.firefox
       user: {} # Also add Flathub user repo, but no user packages
+
+    - type: bling
+      install:
+          - 1password
 
     - type: signing # this sets up the proper policy & signing files for signed images to work fully
