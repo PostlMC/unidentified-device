@@ -30,10 +30,10 @@ modules:
       - git-credential-manager
       - tailscale
       - zsh
-      - firefox
-      - firefox-langpacks
-      - 1password
-      - 1password-cli
+      # - firefox
+      # - firefox-langpacks
+      # - 1password
+      # - 1password-cli
       # Found the answer to this here: https://rpmfusion.org/Configuration
       - https://mirrors.rpmfusion.org/free/fedora/rpmfusion-free-release-%OS_VERSION%.noarch.rpm
       - https://mirrors.rpmfusion.org/nonfree/fedora/rpmfusion-nonfree-release-%OS_VERSION%.noarch.rpm
