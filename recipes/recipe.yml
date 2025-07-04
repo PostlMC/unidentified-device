@@ -30,6 +30,8 @@ modules:
       - git-credential-manager
       - tailscale
       - zsh
+      - firefox
+      - firefox-langpacks
       - 1password
       - 1password-cli
       # Found the answer to this here: https://rpmfusion.org/Configuration
