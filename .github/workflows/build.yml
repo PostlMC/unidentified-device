@@ -5,6 +5,8 @@ on:
   #       "00 06 * * *" # build at 06:00 UTC every day
   # (20 minutes after last ublue images start building)
   push:
+    branches:
+      - main
     paths-ignore: # don't rebuild if only documentation has changed
       - "**.md"
 
@@ -17,7 +19,7 @@ concurrency:
 jobs:
   bluebuild:
     name: Build Custom Image
-    if: "!contains(github.event.commits[0].message, '[ci skip]') && !contains(github.event.commits[0].message, '[skip ci]')"
+    if: ${{ !contains(github.event.head_commit.message, '[ci skip]') && !contains(github.event.head_commit.message, '[skip ci]') }}
     runs-on: ubuntu-latest
     permissions:
       contents: read
