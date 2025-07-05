@@ -4,34 +4,36 @@ set -euo pipefail
 
 echo "Installing Determinate Nix (base system)..."
 
-# Download and run the Determinate Nix installer with --init none for container builds
-curl --proto '=https' --tlsv1.2 -sSf -L https://install.determinate.systems/nix |
-    bash -s -- install linux --no-confirm --init none
+# Install basic dependencies that might be needed
+dnf install -y which findutils
 
-# Set up Nix environment
+# Download and run the Determinate Nix installer with container-appropriate flags
+curl --proto '=https' --tlsv1.2 -sSf -L https://install.determinate.systems/nix |
+    bash -s -- install linux --no-confirm --init none --no-start-daemon
+
+# Set up Nix environment for all users
 echo 'export PATH="/nix/var/nix/profiles/default/bin:$PATH"' >/etc/profile.d/nix.sh
 echo 'export NIX_PROFILES="/nix/var/nix/profiles/default"' >>/etc/profile.d/nix.sh
 
-# Create systemd service for the daemon (will be enabled on first boot)
-cat >/etc/systemd/system/nix-daemon.service <<'SYSTEMD_EOF'
-[Unit]
-Description=Nix Daemon
-Documentation=man:nix-daemon
-RequiresMountsFor=/nix/store
-RequiresMountsFor=/nix/var
-RequiresMountsFor=/nix/var/nix/db
-ConditionPathExists=/nix/store
+# The installer should have created the systemd service, just enable it
+if [ -f /lib/systemd/system/nix-daemon.service ] || [ -f /usr/lib/systemd/system/nix-daemon.service ]; then
+    systemctl enable nix-daemon.service
+    echo "Nix daemon service enabled"
+else
+    echo "Warning: nix-daemon.service not found, may need manual setup"
+fi
 
-[Service]
-ExecStart=/nix/var/nix/profiles/default/bin/nix-daemon --daemon
-KillMode=process
-LimitNOFILE=1048576
+echo "Nix base installation complete"
 
-[Install]
-WantedBy=multi-user.target
-SYSTEMD_EOF
+# Verify installation worked
+if [ ! -d "/nix/store" ]; then
+    echo "ERROR: Nix installation failed - /nix/store not found"
+    exit 1
+fi
 
-# Enable the nix daemon service for when systemd starts
-systemctl enable nix-daemon.service
+if [ ! -f "/nix/var/nix/profiles/default/bin/nix" ]; then
+    echo "ERROR: Nix binary not found at expected location"
+    exit 1
+fi
 
-echo "Nix base installation complete (daemon will start on boot)"
+echo "Nix installation verified successfully"
