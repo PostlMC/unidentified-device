@@ -35,8 +35,8 @@ modules:
       - 1password
       - 1password-cli
       # Found the answer to this here: https://rpmfusion.org/Configuration
-      - https://mirrors.rpmfusion.org/free/fedora/rpmfusion-free-release-%OS_VERSION%.noarch.rpm
-      - https://mirrors.rpmfusion.org/nonfree/fedora/rpmfusion-nonfree-release-%OS_VERSION%.noarch.rpm
+      # - https://mirrors.rpmfusion.org/free/fedora/rpmfusion-free-release-%OS_VERSION%.noarch.rpm
+      # - https://mirrors.rpmfusion.org/nonfree/fedora/rpmfusion-nonfree-release-%OS_VERSION%.noarch.rpm
     # remove:
     # example: removing firefox (in favor of the flatpak)
     # "firefox" is the main package, "firefox-langpacks" is a dependency
