@@ -47,7 +47,14 @@ curl --proto '=https' --tlsv1.2 -sSf -L https://install.determinate.systems/nix 
 mv /nix/store /var/lib/nix/store
 # Move var contents to /var/lib/nix (preserving the var/nix structure)
 mv /nix/var/nix /var/lib/nix/var
+mkdir -p /var/lib/nix/var
 # Note: Can't remove /nix directories on immutable filesystem - they'll be read-only at runtime
+
+# Debug: Show what we actually created
+echo "DEBUG: Contents of /var/lib/nix:"
+ls -la /var/lib/nix/
+echo "DEBUG: Contents of /var/lib/nix/var:"
+ls -la /var/lib/nix/var/ || echo "var directory doesn't exist"
 
 # Find the nix binary path dynamically (it will be in a store path)
 NIX_BINARY=$(find /var/lib/nix/store -name "nix" -type f -executable 2>/dev/null | head -1)
