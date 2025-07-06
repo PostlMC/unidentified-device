@@ -50,12 +50,6 @@ mv /nix/var/nix /var/lib/nix/var
 mkdir -p /var/lib/nix/var
 # Note: Can't remove /nix directories on immutable filesystem - they'll be read-only at runtime
 
-# Debug: Show what we actually created
-echo "DEBUG: Contents of /var/lib/nix:"
-ls -la /var/lib/nix/
-echo "DEBUG: Contents of /var/lib/nix/var:"
-ls -la /var/lib/nix/var/ || echo "var directory doesn't exist"
-
 # Find the nix binary path dynamically (it will be in a store path)
 NIX_BINARY=$(find /var/lib/nix/store -name "nix" -type f -executable 2>/dev/null | head -1)
 if [ -z "$NIX_BINARY" ]; then
@@ -147,8 +141,8 @@ if [ ! -d "/var/lib/nix/store" ]; then
     exit 1
 fi
 
-if [ ! -d "/var/lib/nix/var/nix/profiles" ]; then
-    echo "ERROR: Nix profiles not found in /var/lib/nix/var/nix/profiles"
+if [ ! -d "/var/lib/nix/var/profiles" ]; then
+    echo "ERROR: Nix profiles not found in /var/lib/nix/var/profiles"
     exit 1
 fi
 
