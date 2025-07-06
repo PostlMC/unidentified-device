@@ -42,8 +42,8 @@ EOF
 # Set up Nix environment for all users (don't rely on profiles that may not exist yet)
 cat >/etc/profile.d/nix.sh <<'EOF'
 # Nix environment setup
-export PATH="/usr/lib/nix/var/nix/profiles/default/bin:$PATH"
-export NIX_PROFILES="/var/lib/nix/profiles/default"
+export PATH="/nix/var/nix/profiles/default/bin:$PATH"
+export NIX_PROFILES="/nix/var/nix/profiles/default"
 export NIX_SSL_CERT_FILE="/etc/ssl/certs/ca-certificates.crt"
 export __ETC_PROFILE_NIX_SOURCED=1
 EOF
@@ -58,7 +58,7 @@ RequiresMountsFor=/var/lib/nix
 ConditionPathExists=/nix/store
 
 [Service]
-ExecStart=/usr/lib/nix/var/nix/profiles/default/bin/nix-daemon --daemon
+ExecStart=/nix/var/nix/profiles/default/bin/nix-daemon --daemon
 KillMode=process
 LimitNOFILE=1048576
 
@@ -77,8 +77,8 @@ if [ ! -d "/usr/lib/nix/store" ]; then
     exit 1
 fi
 
-if [ ! -f "/usr/lib/nix/var/nix/profiles/default/bin/nix" ]; then
-    echo "ERROR: Nix binary not found at expected location"
+if [ ! -d "/var/lib/nix/profiles" ]; then
+    echo "ERROR: Nix profiles not found in /var/lib/nix/profiles"
     exit 1
 fi
 
@@ -92,15 +92,21 @@ echo "Nix installation verified successfully"
 # Install devbox using the Nix we just installed
 echo "Installing devbox via Nix..."
 
-# Source the environment for this script
-export PATH="/usr/lib/nix/var/nix/profiles/default/bin:$PATH"
-export NIX_PROFILES="/var/lib/nix/profiles/default"
+# We need to work with the actual binary locations during build time
+# The symlinks won't exist until boot, so use direct paths to /var/lib/nix
 
-# Install devbox to the default profile
-/usr/lib/nix/var/nix/profiles/default/bin/nix profile install nixpkgs#devbox
+# First, create a temporary symlink structure for the build
+mkdir -p /tmp/nix-build/var
+ln -s /var/lib/nix /tmp/nix-build/var/nix
+
+# Install devbox using direct path to nix binary
+NIXPKGS_ALLOW_UNFREE=1 /var/lib/nix/profiles/default/bin/nix \
+    --extra-experimental-features "nix-command flakes" \
+    profile install nixpkgs#devbox \
+    --profile /var/lib/nix/profiles/default
 
 # Verify devbox installation
-if [ ! -f "/usr/lib/nix/var/nix/profiles/default/bin/devbox" ]; then
+if [ ! -f "/var/lib/nix/profiles/default/bin/devbox" ]; then
     echo "ERROR: devbox not found after installation"
     exit 1
 fi
