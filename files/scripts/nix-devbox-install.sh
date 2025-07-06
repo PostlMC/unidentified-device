@@ -11,6 +11,7 @@ dnf install -y which findutils
 echo "Creating Nix build users..."
 if ! getent group nixbld >/dev/null 2>&1; then
     groupadd -g 30000 nixbld
+    echo "Created nixbld group"
 fi
 
 # Create nixbld users (usually need 10-32 for multi-user)
@@ -19,8 +20,15 @@ for i in $(seq 1 10); do
         useradd -c "Nix build user $i" -d /var/empty -g nixbld \
             -G nixbld -M -N -r -s "$(which nologin)" \
             -u $((30000 + i)) nixbld$i
+        echo "Created nixbld$i user"
     fi
 done
+
+# Verify the group was created
+if ! getent group nixbld >/dev/null 2>&1; then
+    echo "ERROR: Failed to create nixbld group"
+    exit 1
+fi
 
 # Create staging directory for ALL Nix data (everything goes in /var/lib/nix)
 mkdir -p /var/lib/nix
@@ -34,10 +42,14 @@ curl --proto '=https' --tlsv1.2 -sSf -L https://install.determinate.systems/nix 
     NIX_INSTALLER_NO_MODIFY_PROFILE=1 \
         bash -s -- install linux --no-confirm --init none --no-start-daemon
 
-# Move the ENTIRE Nix installation to /var/lib/nix (writable location)
-# This includes both the store and the state data
-mv /nix/* /var/lib/nix/
-rmdir /nix
+# Move the Nix installation to /var/lib/nix (writable location)
+# Move store directly to avoid double nesting
+mv /nix/store /var/lib/nix/store
+# Move var contents to /var/lib/nix (preserving the var/nix structure)
+mv /nix/var/nix /var/lib/nix/var
+mkdir -p /var/lib/nix/var
+# Clean up
+rmdir /nix/var /nix
 
 # Find the nix binary path dynamically (it will be in a store path)
 NIX_BINARY=$(find /var/lib/nix/store -name "nix" -type f -executable 2>/dev/null | head -1)
