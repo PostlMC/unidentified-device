@@ -27,8 +27,7 @@ mv /nix /usr/lib/nix
 
 # Move writable data to /var/lib/nix (persistent location)
 mv /usr/lib/nix/var/nix/* /var/lib/nix/
-rmdir /usr/lib/nix/var/nix
-rmdir /usr/lib/nix/var
+rm -rf /usr/lib/nix/var
 
 # Set up proper symlinks via tmpfiles.d (created at boot time)
 cat >/usr/lib/tmpfiles.d/nix.conf <<'EOF'
