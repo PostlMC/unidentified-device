@@ -87,35 +87,5 @@ if [ ! -f "/usr/lib/tmpfiles.d/nix.conf" ]; then
     exit 1
 fi
 
-echo "Nix installation verified successfully"
-
-# Install devbox using the Nix we just installed
-echo "Installing devbox via Nix..."
-
-# Debug: see what's actually in /var/lib/nix
-echo "DEBUG: Contents of /usr/lib/nix:"
-find /usr/lib/nix -type f -name "*nix*"
-
-# Find the actual nix binary since profile structure might not be complete yet
-NIX_BINARY=$(find /usr/lib/nix -name "nix" -type f -executable | head -1)
-
-if [ -z "$NIX_BINARY" ]; then
-    echo "ERROR: Could not find nix binary in /var/lib/nix"
-    exit 1
-fi
-
-echo "Found nix binary at: $NIX_BINARY"
-
-# Install devbox using the found nix binary
-NIXPKGS_ALLOW_UNFREE=1 "$NIX_BINARY" \
-    --extra-experimental-features "nix-command flakes" \
-    profile install nixpkgs#devbox \
-    --profile /var/lib/nix/profiles/default
-
-# Verify devbox installation
-if [ ! -f "/var/lib/nix/profiles/default/bin/devbox" ]; then
-    echo "ERROR: devbox not found after installation"
-    exit 1
-fi
-
-echo "Nix and devbox installation complete (will be functional after reboot)"
+echo "Nix installation complete. Install devbox after boot with:"
+echo "  nix profile install nixpkgs#devbox"
