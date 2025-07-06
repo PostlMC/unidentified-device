@@ -26,7 +26,7 @@ curl --proto '=https' --tlsv1.2 -sSf -L https://install.determinate.systems/nix 
 mv /nix /usr/lib/nix
 
 # Move writable data to /var/lib/nix (persistent location)
-mv /usr/lib/nix/var/nix/* /var/lib/nix/
+mv /usr/lib/nix/var/nix /var/lib/nix
 rm -rf /usr/lib/nix/var
 
 # Set up proper symlinks via tmpfiles.d (created at boot time)
