@@ -92,15 +92,18 @@ echo "Nix installation verified successfully"
 # Install devbox using the Nix we just installed
 echo "Installing devbox via Nix..."
 
-# We need to work with the actual binary locations during build time
-# The symlinks won't exist until boot, so use direct paths to /var/lib/nix
+# Find the actual nix binary since profile structure might not be complete yet
+NIX_BINARY=$(find /var/lib/nix -name "nix" -type f -executable | head -1)
 
-# First, create a temporary symlink structure for the build
-mkdir -p /tmp/nix-build/var
-ln -s /var/lib/nix /tmp/nix-build/var/nix
+if [ -z "$NIX_BINARY" ]; then
+    echo "ERROR: Could not find nix binary in /var/lib/nix"
+    exit 1
+fi
 
-# Install devbox using direct path to nix binary
-NIXPKGS_ALLOW_UNFREE=1 /var/lib/nix/profiles/default/bin/nix \
+echo "Found nix binary at: $NIX_BINARY"
+
+# Install devbox using the found nix binary
+NIXPKGS_ALLOW_UNFREE=1 "$NIX_BINARY" \
     --extra-experimental-features "nix-command flakes" \
     profile install nixpkgs#devbox \
     --profile /var/lib/nix/profiles/default
