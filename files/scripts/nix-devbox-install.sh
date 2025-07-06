@@ -53,12 +53,12 @@ cat >/etc/systemd/system/nix-daemon.service <<'EOF'
 [Unit]
 Description=Nix Daemon
 Documentation=man:nix-daemon
-RequiresMountsFor=/nix/store
+RequiresMountsFor=/usr/lib/nix/store
 RequiresMountsFor=/var/lib/nix
-ConditionPathExists=/nix/store
+ConditionPathExists=/usr/lib/nix/store
 
 [Service]
-ExecStart=/nix/var/nix/profiles/default/bin/nix-daemon --daemon
+ExecStart=/var/lib/nix/nix/profiles/default/bin/nix-daemon --daemon
 KillMode=process
 LimitNOFILE=1048576
 
