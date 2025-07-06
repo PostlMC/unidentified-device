@@ -77,8 +77,8 @@ if [ ! -d "/usr/lib/nix/store" ]; then
     exit 1
 fi
 
-if [ ! -d "/var/lib/nix/profiles" ]; then
-    echo "ERROR: Nix profiles not found in /var/lib/nix/profiles"
+if [ ! -d "/var/lib/nix/nix/profiles" ]; then
+    echo "ERROR: Nix profiles not found in /var/lib/nix/nix/profiles"
     exit 1
 fi
 
