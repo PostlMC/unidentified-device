@@ -47,6 +47,7 @@ if [ -z "$NIX_BINARY" ]; then
 fi
 
 # Create wrapper script for nix command (handles shared library issues)
+mkdir -p /usr/local/bin
 cat >/usr/local/bin/nix <<'EOF'
 #!/bin/bash
 exec /lib64/ld-linux-x86-64.so.2 NIX_BINARY_PLACEHOLDER "$@"
