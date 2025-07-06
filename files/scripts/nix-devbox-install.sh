@@ -46,8 +46,10 @@ if [ -z "$NIX_BINARY" ]; then
     exit 1
 fi
 
-# Create wrapper script for nix command (handles shared library issues)
+# Ensure /usr/local/bin exists
 mkdir -p /usr/local/bin
+
+# Create wrapper script for nix command (handles shared library issues)
 cat >/usr/local/bin/nix <<'EOF'
 #!/bin/bash
 exec /lib64/ld-linux-x86-64.so.2 NIX_BINARY_PLACEHOLDER "$@"
@@ -94,7 +96,7 @@ fi
 # Tell Nix where its data actually lives (all in /var/lib/nix)
 export NIX_STORE_DIR="/var/lib/nix/store"
 export NIX_STATE_DIR="/var/lib/nix"
-export NIX_PROFILES="/var/lib/nix/profiles/default"
+export NIX_PROFILES="/var/lib/nix/var/nix/profiles/default"
 export NIX_SSL_CERT_FILE="/etc/ssl/certs/ca-certificates.crt"
 export __ETC_PROFILE_NIX_SOURCED=1
 EOF
@@ -128,8 +130,8 @@ if [ ! -d "/var/lib/nix/store" ]; then
     exit 1
 fi
 
-if [ ! -d "/var/lib/nix/profiles" ]; then
-    echo "ERROR: Nix profiles not found in /var/lib/nix/profiles"
+if [ ! -d "/var/lib/nix/var/nix/profiles" ]; then
+    echo "ERROR: Nix profiles not found in /var/lib/nix/var/nix/profiles"
     exit 1
 fi
 
