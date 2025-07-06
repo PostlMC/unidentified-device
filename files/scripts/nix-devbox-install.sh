@@ -92,6 +92,10 @@ echo "Nix installation verified successfully"
 # Install devbox using the Nix we just installed
 echo "Installing devbox via Nix..."
 
+# Debug: see what's actually in /var/lib/nix
+echo "DEBUG: Contents of /var/lib/nix:"
+find /var/lib/nix -type f -name "*nix*"
+
 # Find the actual nix binary since profile structure might not be complete yet
 NIX_BINARY=$(find /var/lib/nix -name "nix" -type f -executable | head -1)
 
