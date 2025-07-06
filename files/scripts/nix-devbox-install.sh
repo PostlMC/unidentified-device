@@ -93,11 +93,11 @@ echo "Nix installation verified successfully"
 echo "Installing devbox via Nix..."
 
 # Debug: see what's actually in /var/lib/nix
-echo "DEBUG: Contents of /var/lib/nix:"
-find /var/lib/nix -type f -name "*nix*"
+echo "DEBUG: Contents of /usr/lib/nix:"
+find /usr/lib/nix -type f -name "*nix*"
 
 # Find the actual nix binary since profile structure might not be complete yet
-NIX_BINARY=$(find /var/lib/nix -name "nix" -type f -executable | head -1)
+NIX_BINARY=$(find /usr/lib/nix -name "nix" -type f -executable | head -1)
 
 if [ -z "$NIX_BINARY" ]; then
     echo "ERROR: Could not find nix binary in /var/lib/nix"
