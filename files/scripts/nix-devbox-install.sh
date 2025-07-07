@@ -65,21 +65,21 @@ if [ ! -x "$NIX_BINARY" ]; then
     exit 1
 fi
 
-# Ensure /usr/local/bin exists
-mkdir -p /usr/local/bin
+# Ensure /usr/bin exists
+mkdir -p /usr/bin 2>/dev/null || true
 
 # Create wrapper script for nix command (handles shared library issues)
-cat >/usr/local/bin/nix <<'EOF'
+cat >/usr/bin/nix <<'EOF'
 #!/bin/bash
 exec /lib64/ld-linux-x86-64.so.2 NIX_BINARY_PLACEHOLDER "$@"
 EOF
 
 # Replace placeholder with actual path
-sed -i "s|NIX_BINARY_PLACEHOLDER|$NIX_BINARY|g" /usr/local/bin/nix
-chmod +x /usr/local/bin/nix
+sed -i "s|NIX_BINARY_PLACEHOLDER|$NIX_BINARY|g" /usr/bin/nix
+chmod +x /usr/bin/nix
 
 # Create wrapper script for nix-daemon (handles shared library issues + environment)
-cat >/usr/local/bin/nix-daemon-wrapper <<'EOF'
+cat >/usr/bin/nix-daemon-wrapper <<'EOF'
 #!/bin/bash
 export LD_LIBRARY_PATH="$(find /var/lib/nix/store -name "lib" -type d 2>/dev/null | grep -v -E "(glibc|gcc|binutils)" | tr '\n' ':' | sed 's/:$//' 2>/dev/null || echo "")"
 export NIX_STORE_DIR="/var/lib/nix/store"
@@ -92,8 +92,8 @@ exec /lib64/ld-linux-x86-64.so.2 NIX_BINARY_PLACEHOLDER --extra-experimental-fea
 EOF
 
 # Replace placeholder with actual path
-sed -i "s|NIX_BINARY_PLACEHOLDER|$NIX_BINARY|g" /usr/local/bin/nix-daemon-wrapper
-chmod +x /usr/local/bin/nix-daemon-wrapper
+sed -i "s|NIX_BINARY_PLACEHOLDER|$NIX_BINARY|g" /usr/bin/nix-daemon-wrapper
+chmod +x /usr/bin/nix-daemon-wrapper
 
 # Set up Nix environment for all users (points to writable store location)
 cat >/etc/profile.d/nix.sh <<'EOF'
@@ -103,7 +103,7 @@ cat >/etc/profile.d/nix.sh <<'EOF'
 NIX_BINARY=$(find /var/lib/nix/store -name "nix" -type f -executable 2>/dev/null | head -1)
 if [ -n "$NIX_BINARY" ]; then
     NIX_BIN_DIR=$(dirname "$NIX_BINARY")
-    export PATH="/usr/local/bin:$NIX_BIN_DIR:$PATH"
+    export PATH="/usr/bin:$NIX_BIN_DIR:$PATH"
     
     # Find ALL library directories but exclude problematic system libraries
     ALL_LIB_DIRS=$(find /var/lib/nix/store -name "lib" -type d 2>/dev/null | grep -v -E "(glibc|gcc|binutils)" | tr '\n' ':' 2>/dev/null || echo "")
@@ -130,7 +130,7 @@ RequiresMountsFor=/var/lib/nix
 ConditionPathExists=/var/lib/nix/store
 
 [Service]
-ExecStart=/usr/local/bin/nix-daemon-wrapper
+ExecStart=/usr/bin/nix-daemon-wrapper
 KillMode=process
 LimitNOFILE=1048576
 
@@ -154,12 +154,12 @@ if [ ! -d "/var/lib/nix/var/profiles" ]; then
     exit 1
 fi
 
-if [ ! -f "/usr/local/bin/nix" ]; then
+if [ ! -f "/usr/bin/nix" ]; then
     echo "ERROR: Nix wrapper script not created"
     exit 1
 fi
 
-if [ ! -f "/usr/local/bin/nix-daemon-wrapper" ]; then
+if [ ! -f "/usr/bin/nix-daemon-wrapper" ]; then
     echo "ERROR: Nix daemon wrapper script not created"
     exit 1
 fi
