@@ -79,6 +79,7 @@ sed -i "s|NIX_BINARY_PLACEHOLDER|$NIX_BINARY|g" /usr/bin/nix
 chmod +x /usr/bin/nix
 
 # Create wrapper script for nix-daemon (handles shared library issues + environment)
+mkdir -p /usr/local/bin 2>/dev/null || true
 cat >/usr/local/bin/nix-daemon-wrapper <<'EOF'
 #!/bin/bash
 
@@ -164,7 +165,7 @@ if [ ! -f "/usr/bin/nix" ]; then
     exit 1
 fi
 
-if [ ! -f "/usr/bin/nix-daemon-wrapper" ]; then
+if [ ! -f "/usr/local/bin/nix-daemon-wrapper" ]; then
     echo "ERROR: Nix daemon wrapper script not created"
     exit 1
 fi
