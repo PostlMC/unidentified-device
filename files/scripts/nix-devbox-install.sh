@@ -78,15 +78,29 @@ EOF
 sed -i "s|NIX_BINARY_PLACEHOLDER|$NIX_BINARY|g" /usr/bin/nix
 chmod +x /usr/bin/nix
 
-# Create wrapper script for nix-daemon (handles shared library issues + environment)
-mkdir -p /usr/local/bin 2>/dev/null || true
-cat >/usr/local/bin/nix-daemon-wrapper <<'EOF'
+# Create a systemd service to set up Nix build users and daemon wrapper on first boot
+# (users/groups don't persist from container build to OSTree runtime)
+cat >/etc/systemd/system/nix-setup-users.service <<'EOF'
+[Unit]
+Description=Create Nix build users and daemon wrapper
+Before=nix-daemon.service
+ConditionPathExists=!/var/lib/nix/.users-created
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+ExecStart=/bin/bash -c '\
+groupadd -g 30000 nixbld 2>/dev/null || true; \
+for i in $(seq 1 10); do \
+    useradd -c "Nix build user $i" -d /var/empty -g nixbld \
+        -G nixbld -M -N -r -s $(which nologin) \
+        -u $((30000 + i)) nixbld$i 2>/dev/null || true; \
+done; \
+mkdir -p /usr/local/bin; \
+cat > /usr/local/bin/nix-daemon-wrapper << "WRAPPER_EOF"
 #!/bin/bash
-
-# Create runtime symlink for hardcoded paths
-mkdir -p /run/nix 2>/dev/null || true
+mkdir -p /run/nix
 ln -sf /var/lib/nix/store/store /run/nix/store
-
 export LD_LIBRARY_PATH="$(find /var/lib/nix/store -name "lib" -type d 2>/dev/null | grep -v -E "(glibc|gcc|binutils)" | tr '\n' ':' | sed 's/:$//')"
 export NIX_STORE_DIR="/run/nix/store"
 export NIX_STATE_DIR="/var/lib/nix"
@@ -94,12 +108,17 @@ export NIX_LOG_DIR="/var/lib/nix/log"
 export NIX_CONF_DIR="/var/lib/nix/conf"
 export NIX_DAEMON_SOCKET_PATH="/var/lib/nix/daemon-socket/socket"
 mkdir -p /var/lib/nix/daemon-socket
-exec /lib64/ld-linux-x86-64.so.2 /run/nix/store/j0ifb5bi20wdvcfy32wrkxy3ndpmrbnd-nix-2.29.1/bin/nix --extra-experimental-features nix-command --extra-experimental-features flakes daemon "$@"
-EOF
+exec /lib64/ld-linux-x86-64.so.2 /run/nix/store/BINARY_HASH-nix-2.29.1/bin/nix --extra-experimental-features nix-command --extra-experimental-features flakes daemon "$@"
+WRAPPER_EOF
+chmod +x /usr/local/bin/nix-daemon-wrapper; \
+BINARY_PATH=$(find /var/lib/nix/store -name "nix" -type f -executable 2>/dev/null | head -1); \
+BINARY_HASH=$(basename $(dirname $(dirname $BINARY_PATH))); \
+sed -i "s/BINARY_HASH/$BINARY_HASH/g" /usr/local/bin/nix-daemon-wrapper; \
+touch /var/lib/nix/.users-created'
 
-# Replace placeholder with actual path
-# sed -i "s|NIX_BINARY_PLACEHOLDER|$NIX_BINARY|g" /usr/local/bin/nix-daemon-wrapper
-chmod +x /usr/local/bin/nix-daemon-wrapper
+[Install]
+WantedBy=multi-user.target
+EOF
 
 # Set up Nix environment for all users (points to writable store location)
 cat >/etc/profile.d/nix.sh <<'EOF'
@@ -162,11 +181,6 @@ fi
 
 if [ ! -f "/usr/bin/nix" ]; then
     echo "ERROR: Nix wrapper script not created"
-    exit 1
-fi
-
-if [ ! -f "/usr/local/bin/nix-daemon-wrapper" ]; then
-    echo "ERROR: Nix daemon wrapper script not created"
     exit 1
 fi
 
