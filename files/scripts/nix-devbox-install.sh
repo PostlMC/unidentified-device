@@ -98,8 +98,8 @@ exec /lib64/ld-linux-x86-64.so.2 /run/nix/store/j0ifb5bi20wdvcfy32wrkxy3ndpmrbnd
 EOF
 
 # Replace placeholder with actual path
-# sed -i "s|NIX_BINARY_PLACEHOLDER|$NIX_BINARY|g" /usr/bin/nix-daemon-wrapper
-chmod +x /usr/bin/nix-daemon-wrapper
+# sed -i "s|NIX_BINARY_PLACEHOLDER|$NIX_BINARY|g" /usr/local/bin/nix-daemon-wrapper
+chmod +x /usr/local/bin/nix-daemon-wrapper
 
 # Set up Nix environment for all users (points to writable store location)
 cat >/etc/profile.d/nix.sh <<'EOF'
@@ -109,7 +109,7 @@ cat >/etc/profile.d/nix.sh <<'EOF'
 NIX_BINARY=$(find /var/lib/nix/store -name "nix" -type f -executable 2>/dev/null | head -1)
 if [ -n "$NIX_BINARY" ]; then
     NIX_BIN_DIR=$(dirname "$NIX_BINARY")
-    export PATH="/usr/bin:$NIX_BIN_DIR:$PATH"
+    export PATH="/usr/local/bin:$NIX_BIN_DIR:$PATH"
     
     # Find ALL library directories but exclude problematic system libraries
     ALL_LIB_DIRS=$(find /var/lib/nix/store -name "lib" -type d 2>/dev/null | grep -v -E "(glibc|gcc|binutils)" | tr '\n' ':' 2>/dev/null || echo "")
