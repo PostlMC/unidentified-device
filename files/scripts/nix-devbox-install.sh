@@ -81,8 +81,13 @@ chmod +x /usr/bin/nix
 # Create wrapper script for nix-daemon (handles shared library issues + environment)
 cat >/usr/bin/nix-daemon-wrapper <<'EOF'
 #!/bin/bash
-export LD_LIBRARY_PATH="$(find /var/lib/nix/store -name "lib" -type d 2>/dev/null | grep -v -E "(glibc|gcc|binutils)" | tr '\n' ':' | sed 's/:$//' 2>/dev/null || echo "")"
-export NIX_STORE_DIR="/var/lib/nix/store"
+
+# Create runtime symlink for hardcoded paths
+mkdir -p /run/nix 2>/dev/null || true
+ln -sf /var/lib/nix/store/store /run/nix/store
+
+export LD_LIBRARY_PATH="$(find /var/lib/nix/store -name "lib" -type d 2>/dev/null | grep -v -E "(glibc|gcc|binutils)" | tr '\n' ':' | sed 's/:$//')"
+export NIX_STORE_DIR="/run/nix/store"
 export NIX_STATE_DIR="/var/lib/nix"
 export NIX_LOG_DIR="/var/lib/nix/log"
 export NIX_CONF_DIR="/var/lib/nix/conf"
@@ -113,7 +118,7 @@ if [ -n "$NIX_BINARY" ]; then
 fi
 
 # Tell Nix where its data actually lives (all in /var/lib/nix)
-export NIX_STORE_DIR="/var/lib/nix/store"
+export NIX_STORE_DIR="/run/nix/store"
 export NIX_STATE_DIR="/var/lib/nix"
 export NIX_PROFILES="/var/lib/nix/var/profiles/default"
 export NIX_SSL_CERT_FILE="/etc/ssl/certs/ca-certificates.crt"
