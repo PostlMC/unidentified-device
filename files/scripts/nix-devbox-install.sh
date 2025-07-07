@@ -79,7 +79,7 @@ sed -i "s|NIX_BINARY_PLACEHOLDER|$NIX_BINARY|g" /usr/bin/nix
 chmod +x /usr/bin/nix
 
 # Create wrapper script for nix-daemon (handles shared library issues + environment)
-cat >/usr/bin/nix-daemon-wrapper <<'EOF'
+cat >/usr/local/bin/nix-daemon-wrapper <<'EOF'
 #!/bin/bash
 
 # Create runtime symlink for hardcoded paths
@@ -93,11 +93,11 @@ export NIX_LOG_DIR="/var/lib/nix/log"
 export NIX_CONF_DIR="/var/lib/nix/conf"
 export NIX_DAEMON_SOCKET_PATH="/var/lib/nix/daemon-socket/socket"
 mkdir -p /var/lib/nix/daemon-socket
-exec /lib64/ld-linux-x86-64.so.2 NIX_BINARY_PLACEHOLDER --extra-experimental-features nix-command --extra-experimental-features flakes daemon "$@"
+exec /lib64/ld-linux-x86-64.so.2 /run/nix/store/j0ifb5bi20wdvcfy32wrkxy3ndpmrbnd-nix-2.29.1/bin/nix --extra-experimental-features nix-command --extra-experimental-features flakes daemon "$@"
 EOF
 
 # Replace placeholder with actual path
-sed -i "s|NIX_BINARY_PLACEHOLDER|$NIX_BINARY|g" /usr/bin/nix-daemon-wrapper
+# sed -i "s|NIX_BINARY_PLACEHOLDER|$NIX_BINARY|g" /usr/bin/nix-daemon-wrapper
 chmod +x /usr/bin/nix-daemon-wrapper
 
 # Set up Nix environment for all users (points to writable store location)
@@ -135,7 +135,7 @@ RequiresMountsFor=/var/lib/nix
 ConditionPathExists=/var/lib/nix/store
 
 [Service]
-ExecStart=/usr/bin/nix-daemon-wrapper
+ExecStart=/usr/local/bin/nix-daemon-wrapper
 KillMode=process
 LimitNOFILE=1048576
 
