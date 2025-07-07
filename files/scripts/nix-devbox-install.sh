@@ -7,28 +7,36 @@ echo "Installing Determinate Nix for Aurora Linux (immutable system)..."
 # Install basic dependencies that might be needed
 dnf install -y which findutils
 
-# Create the nixbld group and users (required for multi-user Nix)
-echo "Creating Nix build users..."
-if ! getent group nixbld >/dev/null 2>&1; then
-    groupadd -g 30000 nixbld
-    echo "Created nixbld group"
-fi
+# Create a systemd service to set up Nix build users on first boot
+# (users/groups don't persist from container build to OSTree runtime)
+cat >/etc/systemd/system/nix-setup-users.service <<'EOF'
+[Unit]
+Description=Create Nix build users
+Before=nix-daemon.service
+ConditionPathExists=!/var/lib/nix/.users-created
 
-# Create nixbld users (usually need 10-32 for multi-user)
-for i in $(seq 1 10); do
-    if ! getent passwd nixbld$i >/dev/null 2>&1; then
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+ExecStart=/bin/bash -c '\
+if ! getent group nixbld >/dev/null 2>&1; then \
+    groupadd -g 30000 nixbld; \
+fi; \
+for i in $(seq 1 10); do \
+    if ! getent passwd nixbld$i >/dev/null 2>&1; then \
         useradd -c "Nix build user $i" -d /var/empty -g nixbld \
-            -G nixbld -M -N -r -s "$(which nologin)" \
-            -u $((30000 + i)) nixbld$i
-        echo "Created nixbld$i user"
-    fi
-done
+            -G nixbld -M -N -r -s $(which nologin) \
+            -u $((30000 + i)) nixbld$i; \
+    fi; \
+done; \
+touch /var/lib/nix/.users-created'
 
-# Verify the group was created
-if ! getent group nixbld >/dev/null 2>&1; then
-    echo "ERROR: Failed to create nixbld group"
-    exit 1
-fi
+[Install]
+WantedBy=multi-user.target
+EOF
+
+# Enable the user creation service
+systemctl enable nix-setup-users.service
 
 # Create staging directory for ALL Nix data (everything goes in /var/lib/nix)
 mkdir -p /var/lib/nix
@@ -71,7 +79,7 @@ sed -i "s|NIX_BINARY_PLACEHOLDER|$NIX_BINARY|g" /usr/local/bin/nix
 chmod +x /usr/local/bin/nix
 
 # Create wrapper script for nix-daemon (handles shared library issues + environment)
-cat >/usr/local/bin/nix-daemon-wrapper <<'EOF'
+cat >/usr/bin/nix-daemon-wrapper <<'EOF'
 #!/bin/bash
 export LD_LIBRARY_PATH="$(find /var/lib/nix/store -name "lib" -type d 2>/dev/null | grep -v -E "(glibc|gcc|binutils)" | tr '\n' ':' | sed 's/:$//')"
 export NIX_STORE_DIR="/var/lib/nix/store"
@@ -85,7 +93,7 @@ EOF
 
 # Replace placeholder with actual path
 sed -i "s|NIX_BINARY_PLACEHOLDER|$NIX_BINARY|g" /usr/local/bin/nix-daemon-wrapper
-chmod +x /usr/local/bin/nix-daemon-wrapper
+chmod +x /usr/bin/nix-daemon-wrapper
 
 # Set up Nix environment for all users (points to writable store location)
 cat >/etc/profile.d/nix.sh <<'EOF'
@@ -122,7 +130,7 @@ RequiresMountsFor=/var/lib/nix
 ConditionPathExists=/var/lib/nix/store
 
 [Service]
-ExecStart=/usr/local/bin/nix-daemon-wrapper
+ExecStart=/usr/bin/nix-daemon-wrapper
 KillMode=process
 LimitNOFILE=1048576
 
@@ -151,7 +159,7 @@ if [ ! -f "/usr/local/bin/nix" ]; then
     exit 1
 fi
 
-if [ ! -f "/usr/local/bin/nix-daemon-wrapper" ]; then
+if [ ! -f "/usr/bin/nix-daemon-wrapper" ]; then
     echo "ERROR: Nix daemon wrapper script not created"
     exit 1
 fi
