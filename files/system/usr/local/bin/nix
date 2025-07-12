@@ -1,0 +1,2 @@
+#!/bin/bash
+exec /lib64/ld-linux-x86-64.so.2 NIX_BINARY_PLACEHOLDER "$@"

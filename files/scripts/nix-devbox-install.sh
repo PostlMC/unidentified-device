@@ -7,30 +7,6 @@ echo "Installing Determinate Nix for Aurora Linux (immutable system)..."
 # Install basic dependencies that might be needed
 dnf install -y which findutils
 
-# Create a systemd service to set up Nix build users on first boot
-# (users/groups don't persist from container build to OSTree runtime)
-cat >/etc/systemd/system/nix-setup-users.service <<'EOF'
-[Unit]
-Description=Create Nix build users
-Before=nix-daemon.service
-ConditionPathExists=!/var/lib/nix/.users-created
-
-[Service]
-Type=oneshot
-RemainAfterExit=yes
-ExecStart=/bin/bash -c '\
-groupadd -g 30000 nixbld 2>/dev/null || true; \
-for i in $(seq 1 10); do \
-    useradd -c "Nix build user $i" -d /var/empty -g nixbld \
-        -G nixbld -M -N -r -s $(which nologin) \
-        -u $((30000 + i)) nixbld$i 2>/dev/null || true; \
-done; \
-touch /var/lib/nix/.users-created'
-
-[Install]
-WantedBy=multi-user.target
-EOF
-
 # Enable the user creation service
 systemctl enable nix-setup-users.service
 
@@ -68,100 +44,19 @@ fi
 # Ensure /usr/bin exists
 mkdir -p /usr/bin 2>/dev/null || true
 
-# Create wrapper script for nix command (handles shared library issues)
-cat >/usr/bin/nix <<'EOF'
-#!/bin/bash
-exec /lib64/ld-linux-x86-64.so.2 NIX_BINARY_PLACEHOLDER "$@"
-EOF
-
-# Replace placeholder with actual path
+# Copy static nix wrapper script and replace placeholder with actual path
+cp /files/system/usr/local/bin/nix /usr/bin/nix
 sed -i "s|NIX_BINARY_PLACEHOLDER|$NIX_BINARY|g" /usr/bin/nix
 chmod +x /usr/bin/nix
 
-# Create a systemd service to set up Nix build users and daemon wrapper on first boot
-# (users/groups don't persist from container build to OSTree runtime)
-cat >/etc/systemd/system/nix-setup-users.service <<'EOF'
-[Unit]
-Description=Create Nix build users and daemon wrapper
-Before=nix-daemon.service
-ConditionPathExists=!/var/lib/nix/.users-created
+# Copy static nix environment setup script
+mkdir -p /etc/profile.d
+cp /files/system/etc/profile.d/nix.sh /etc/profile.d/nix.sh
+chmod +x /etc/profile.d/nix.sh
 
-[Service]
-Type=oneshot
-RemainAfterExit=yes
-ExecStart=/bin/bash -c '\
-groupadd -g 30000 nixbld 2>/dev/null || true; \
-for i in $(seq 1 10); do \
-    useradd -c "Nix build user $i" -d /var/empty -g nixbld \
-        -G nixbld -M -N -r -s $(which nologin) \
-        -u $((30000 + i)) nixbld$i 2>/dev/null || true; \
-done; \
-mkdir -p /usr/local/bin; \
-cat > /usr/local/bin/nix-daemon-wrapper << "WRAPPER_EOF"
-#!/bin/bash
-mkdir -p /run/nix
-ln -sf /var/lib/nix/store/store /run/nix/store
-export LD_LIBRARY_PATH="$(find /var/lib/nix/store -name "lib" -type d 2>/dev/null | grep -v -E "(glibc|gcc|binutils)" | tr '\n' ':' | sed 's/:$//')"
-export NIX_STORE_DIR="/run/nix/store"
-export NIX_STATE_DIR="/var/lib/nix"
-export NIX_LOG_DIR="/var/lib/nix/log"
-export NIX_CONF_DIR="/var/lib/nix/conf"
-export NIX_DAEMON_SOCKET_PATH="/var/lib/nix/daemon-socket/socket"
-mkdir -p /var/lib/nix/daemon-socket
-exec /lib64/ld-linux-x86-64.so.2 /run/nix/store/BINARY_HASH-nix-2.29.1/bin/nix --extra-experimental-features nix-command --extra-experimental-features flakes daemon "$@"
-WRAPPER_EOF
-chmod +x /usr/local/bin/nix-daemon-wrapper; \
-BINARY_PATH=$(find /var/lib/nix/store -name "nix" -type f -executable 2>/dev/null | head -1); \
-BINARY_HASH=$(basename $(dirname $(dirname $BINARY_PATH))); \
-sed -i "s/BINARY_HASH/$BINARY_HASH/g" /usr/local/bin/nix-daemon-wrapper; \
-touch /var/lib/nix/.users-created'
-
-[Install]
-WantedBy=multi-user.target
-EOF
-
-# Set up Nix environment for all users (points to writable store location)
-cat >/etc/profile.d/nix.sh <<'EOF'
-# Nix environment setup for Aurora (immutable system)
-
-# Find the nix binary dynamically
-NIX_BINARY=$(find /var/lib/nix/store -name "nix" -type f -executable 2>/dev/null | head -1)
-if [ -n "$NIX_BINARY" ]; then
-    NIX_BIN_DIR=$(dirname "$NIX_BINARY")
-    export PATH="/usr/local/bin:$NIX_BIN_DIR:$PATH"
-    
-    # Find ALL library directories but exclude problematic system libraries
-    ALL_LIB_DIRS=$(find /var/lib/nix/store -name "lib" -type d 2>/dev/null | grep -v -E "(glibc|gcc|binutils)" | tr '\n' ':' 2>/dev/null || echo "")
-    if [ -n "$ALL_LIB_DIRS" ]; then
-        export LD_LIBRARY_PATH="${ALL_LIB_DIRS%:}${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}"
-    fi
-fi
-
-# Tell Nix where its data actually lives (all in /var/lib/nix)
-export NIX_STORE_DIR="/run/nix/store"
-export NIX_STATE_DIR="/var/lib/nix"
-export NIX_PROFILES="/var/lib/nix/var/profiles/default"
-export NIX_SSL_CERT_FILE="/etc/ssl/certs/ca-certificates.crt"
-export __ETC_PROFILE_NIX_SOURCED=1
-EOF
-
-# Create systemd service for the daemon (uses wrapper script)
-cat >/etc/systemd/system/nix-daemon.service <<'EOF'
-[Unit]
-Description=Nix Daemon
-Documentation=man:nix-daemon
-RequiresMountsFor=/var/lib/nix/store
-RequiresMountsFor=/var/lib/nix
-ConditionPathExists=/var/lib/nix/store
-
-[Service]
-ExecStart=/usr/local/bin/nix-daemon-wrapper
-KillMode=process
-LimitNOFILE=1048576
-
-[Install]
-WantedBy=multi-user.target
-EOF
+# Copy static nix-daemon systemd service file
+mkdir -p /etc/systemd/system
+cp /files/system/etc/systemd/system/nix-daemon.service /etc/systemd/system/nix-daemon.service
 
 # Enable the nix daemon service for when systemd starts
 systemctl enable nix-daemon.service

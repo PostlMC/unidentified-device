@@ -1,0 +1,15 @@
+#!/bin/bash
+
+mkdir -p /run/nix
+ln -sf /var/lib/nix/store/store /run/nix/store
+
+export LD_LIBRARY_PATH="$(find /var/lib/nix/store -name "lib" -type d 2>/dev/null | grep -v -E "(glibc|gcc|binutils)" | tr '\n' ':' | sed 's/:$//')"
+export NIX_STORE_DIR="/run/nix/store"
+export NIX_STATE_DIR="/var/lib/nix"
+export NIX_LOG_DIR="/var/lib/nix/log"
+export NIX_CONF_DIR="/var/lib/nix/conf"
+export NIX_DAEMON_SOCKET_PATH="/var/lib/nix/daemon-socket/socket"
+
+mkdir -p /var/lib/nix/daemon-socket
+
+exec /lib64/ld-linux-x86-64.so.2 /run/nix/store/BINARY_HASH-nix-2.29.1/bin/nix --extra-experimental-features nix-command --extra-experimental-features flakes daemon "$@"
