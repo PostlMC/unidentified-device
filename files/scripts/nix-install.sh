@@ -7,11 +7,8 @@ echo "Installing Determinate Nix for Aurora Linux (immutable system)..."
 # Install basic dependencies that might be needed
 dnf install -y which findutils
 
-# Enable the user creation service
-systemctl enable nix-setup-users.service
-
-# Create staging directory for ALL Nix data (everything goes in /var/lib/nix)
-mkdir -p /var/lib/nix
+# Create target directories for ALL Nix data (everything goes in /var/lib/nix when we're done)
+mkdir -p /var/lib/nix/var
 
 # Install Nix to a temporary location first
 export NIX_INSTALLER_TARBALL_PATH="/tmp/nix-installer"
@@ -25,40 +22,38 @@ curl --proto '=https' --tlsv1.2 -sSf -L https://install.determinate.systems/nix 
 # Move the Nix installation to /var/lib/nix (writable location)
 # Move store directly to avoid double nesting
 cp -r /nix/store /var/lib/nix/store
-mkdir -p /var/lib/nix/var
 cp -r /nix/var/nix/* /var/lib/nix/var/
 
-# Find the nix binary path dynamically (it will be in a store path)
+# Find the nix binary path dynamically (it will be in a store path) and verify it's actually executable
 NIX_BINARY=$(find /var/lib/nix/store -name "nix" -type f -executable 2>/dev/null | head -1)
 if [ -z "$NIX_BINARY" ]; then
     echo "ERROR: Could not find nix binary in store"
     exit 1
 fi
-
-# Verify it's actually executable
 if [ ! -x "$NIX_BINARY" ]; then
     echo "ERROR: Found nix binary but it's not executable: $NIX_BINARY"
     exit 1
 fi
 
 # Ensure /usr/bin exists
-mkdir -p /usr/bin 2>/dev/null || true
+# mkdir -p /usr/bin 2>/dev/null || true
 
 # Copy static nix wrapper script and replace placeholder with actual path
-cp /files/system/usr/local/bin/nix /usr/bin/nix
+# cp /files/system/usr/local/bin/nix /usr/bin/nix
 sed -i "s|NIX_BINARY_PLACEHOLDER|$NIX_BINARY|g" /usr/bin/nix
 chmod +x /usr/bin/nix
 
 # Copy static nix environment setup script
-mkdir -p /etc/profile.d
-cp /files/system/etc/profile.d/nix.sh /etc/profile.d/nix.sh
+# mkdir -p /etc/profile.d
+# cp /files/system/etc/profile.d/nix.sh /etc/profile.d/nix.sh
 chmod +x /etc/profile.d/nix.sh
 
 # Copy static nix-daemon systemd service file
-mkdir -p /etc/systemd/system
-cp /files/system/etc/systemd/system/nix-daemon.service /etc/systemd/system/nix-daemon.service
+# mkdir -p /etc/systemd/system
+# cp /files/system/etc/systemd/system/nix-daemon.service /etc/systemd/system/nix-daemon.service
 
-# Enable the nix daemon service for when systemd starts
+# Enable the new services
+systemctl enable nix-setup-users.service
 systemctl enable nix-daemon.service
 
 echo "Nix base installation complete (Aurora-compatible)"
@@ -81,7 +76,3 @@ fi
 
 echo ""
 echo "Nix installation complete!"
-echo "After reboot, you can install devbox with:"
-echo "  nix profile install nixpkgs#devbox"
-echo ""
-echo "Note: The binary cache warning about store prefix is expected and harmless."
