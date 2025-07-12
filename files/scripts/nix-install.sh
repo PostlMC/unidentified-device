@@ -53,7 +53,7 @@ chmod +x /etc/profile.d/nix.sh
 # cp /files/system/etc/systemd/system/nix-daemon.service /etc/systemd/system/nix-daemon.service
 
 # Enable the new services
-systemctl enable nix-setup-users.service
+systemctl enable nix-setup.service
 systemctl enable nix-daemon.service
 
 echo "Nix base installation complete (Aurora-compatible)"
