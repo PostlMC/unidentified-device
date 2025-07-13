@@ -2,8 +2,6 @@
 Description=Create Nix build users and daemon wrapper
 Before=nix-daemon.service
 ConditionPathExists=!/var/lib/nix/.users-created
-ConditionPathExists=!/var/lib/nix/.wrapper-created
-ConditionPathExists=!/var/lib/nix/.template-patched
 
 [Service]
 Type=oneshot

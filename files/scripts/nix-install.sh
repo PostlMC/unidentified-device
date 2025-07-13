@@ -27,7 +27,8 @@ curl --proto '=https' --tlsv1.2 -sSf -L https://install.determinate.systems/nix 
 cp -r /nix/store /var/lib/nix/store
 cp -r /nix/var/nix/* /var/lib/nix/var/
 
-# Find the nix binary path dynamically (it will be in a store path) and verify it's actually executable
+# Find the nix binary path dynamically (it will be in a store path) and verify it's actually
+#executable, then patch the /usr/bin/nix wrapper with the actual binary path
 NIX_BINARY=$(find /var/lib/nix/store -name "nix" -type f -executable 2>/dev/null | head -1)
 if [ -z "$NIX_BINARY" ]; then
     echo "ERROR: Could not find nix binary in store"
@@ -37,11 +38,14 @@ if [ ! -x "$NIX_BINARY" ]; then
     echo "ERROR: Found nix binary but it's not executable: $NIX_BINARY"
     exit 1
 fi
-
-# Update static nix wrapper script with actual binary path
 sed -i "s|NIX_BINARY_PLACEHOLDER|$NIX_BINARY|g" /usr/bin/nix
 
+# Patch /usr/bin/nix-daemon-wrapper with the correct BINARY_HASH
+BINARY_HASH=$(basename $(dirname $(dirname $NIX_BINARY)))
+sed -i "s/BINARY_HASH/$BINARY_HASH/g" /usr/bin/nix-daemon-wrapper
+
 chmod +x /usr/bin/nix
+chmod +x /usr/bin/nix-daemon-wrapper
 chmod +x /usr/libexec/nix-setup.sh
 chmod +x /etc/profile.d/nix.sh
 
@@ -52,14 +56,26 @@ if [ ! -d "/var/lib/nix/store" ]; then
     echo "ERROR: Nix store not found at expected location /var/lib/nix/store"
     exit 1
 fi
-
 if [ ! -d "/var/lib/nix/var/profiles" ]; then
     echo "ERROR: Nix profiles not found in /var/lib/nix/var/profiles"
     exit 1
 fi
 
+# Verify script placement
 if [ ! -f "/usr/bin/nix" ]; then
     echo "ERROR: Nix wrapper script not created"
+    exit 1
+fi
+if [ ! -f "/usr/bin/nix-daemon-wrapper" ]; then
+    echo "ERROR: Nix daemon wrapper script not created"
+    exit 1
+fi
+if [ ! -f "/usr/libexec/nix-setup.sh" ]; then
+    echo "ERROR: Nix setup script not created"
+    exit 1
+fi
+if [ ! -f "/etc/profile.d/nix.sh" ]; then
+    echo "ERROR: Nix profile script not created"
     exit 1
 fi
 
