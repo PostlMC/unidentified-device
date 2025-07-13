@@ -1,17 +1,16 @@
-# if [ -e '/nix/var/nix/profiles/default/etc/profile.d/nix-daemon.sh' ]; then
-#     . '/nix/var/nix/profiles/default/etc/profile.d/nix-daemon.sh'
-# fi
-
 # Find the nix binary dynamically
 NIX_BINARY=$(find /var/lib/nix/store -name "nix" -type f -executable 2>/dev/null | head -1)
 if [ -n "$NIX_BINARY" ]; then
     NIX_BIN_DIR=$(dirname "$NIX_BINARY")
     export PATH="/usr/bin:$NIX_BIN_DIR:$PATH"
 
-    # Find ALL library directories but exclude problematic system libraries
-    ALL_LIB_DIRS=$(find /var/lib/nix/store -name "lib" -type d 2>/dev/null | grep -v -E "(glibc|gcc|binutils)" | tr '\n' ':' 2>/dev/null || echo "")
-    if [ -n "$ALL_LIB_DIRS" ]; then
-        export LD_LIBRARY_PATH="${ALL_LIB_DIRS%:}${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}"
+    # Build library path with Nix libraries first (same as daemon wrapper)
+    NIX_LIB_DIRS=$(find /var/lib/nix/store -name "lib" -type d 2>/dev/null | grep -E "(nix-)" | tr '\n' ':' 2>/dev/null || echo "")
+    OTHER_LIB_DIRS=$(find /var/lib/nix/store -name "lib" -type d 2>/dev/null | grep -v -E "(glibc|gcc|binutils|gcc-wrapper|glibc-|libc6)" | tr '\n' ':' 2>/dev/null || echo "")
+
+    COMBINED_LIBS="${NIX_LIB_DIRS}${OTHER_LIB_DIRS}"
+    if [ -n "$COMBINED_LIBS" ]; then
+        export LD_LIBRARY_PATH="${COMBINED_LIBS%:}${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}"
     fi
 fi
 

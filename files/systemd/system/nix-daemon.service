@@ -4,6 +4,7 @@ Documentation=man:nix-daemon
 RequiresMountsFor=/var/lib/nix/store
 RequiresMountsFor=/var/lib/nix
 ConditionPathExists=/var/lib/nix/store
+After=nix-setup.service
 
 [Service]
 ExecStart=/usr/bin/nix-daemon-wrapper
@@ -11,4 +12,4 @@ KillMode=process
 LimitNOFILE=1048576
 
 [Install]
-WantedBy=multi-user.target 
+WantedBy=multi-user.target

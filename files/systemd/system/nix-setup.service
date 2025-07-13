@@ -1,5 +1,5 @@
 [Unit]
-Description=Create Nix build users and daemon wrapper
+Description=Create Nix build users
 Before=nix-daemon.service
 ConditionPathExists=!/var/lib/nix/.users-created
 

@@ -2,12 +2,6 @@
 
 set -euo pipefail
 
-echo "Validating files module actions..."
-for D in /etc/profile.d /usr/bin /usr/libexec /usr/share; do
-    echo "Validating $D..."
-    ls -la $D | sed 's/^/    /'
-done
-
 echo "Installing Determinate Nix for Aurora Linux (immutable system)..."
 
 # Create target directories for ALL Nix data
@@ -17,32 +11,14 @@ mkdir -p /var/lib/nix/var
 export NIX_INSTALLER_TARBALL_PATH="/tmp/nix-installer"
 mkdir -p "$NIX_INSTALLER_TARBALL_PATH"
 
-# Download and run the Determinate Nix installer with special flags for our setup
+# Download and run the Determinate Nix installer
 curl --proto '=https' --tlsv1.2 -sSf -L https://install.determinate.systems/nix |
     NIX_INSTALLER_NO_MODIFY_PROFILE=1 \
         bash -s -- install linux --no-confirm --init none --no-start-daemon
 
 # Move the Nix installation to /var/lib/nix (writable location)
-# Move store directly to avoid double nesting
 cp -r /nix/store /var/lib/nix/store
 cp -r /nix/var/nix/* /var/lib/nix/var/
-
-# Find the nix binary path dynamically (it will be in a store path) and verify it's actually
-#executable, then patch the /usr/bin/nix wrapper with the actual binary path
-NIX_BINARY=$(find /var/lib/nix/store -name "nix" -type f -executable 2>/dev/null | head -1)
-if [ -z "$NIX_BINARY" ]; then
-    echo "ERROR: Could not find nix binary in store"
-    exit 1
-fi
-if [ ! -x "$NIX_BINARY" ]; then
-    echo "ERROR: Found nix binary but it's not executable: $NIX_BINARY"
-    exit 1
-fi
-sed -i "s|NIX_BINARY_PLACEHOLDER|$NIX_BINARY|g" /usr/bin/nix
-
-# Patch /usr/bin/nix-daemon-wrapper with the correct BINARY_HASH
-BINARY_HASH=$(basename $(dirname $(dirname $NIX_BINARY)))
-sed -i "s/BINARY_HASH/$BINARY_HASH/g" /usr/bin/nix-daemon-wrapper
 
 chmod +x /usr/bin/nix
 chmod +x /usr/bin/nix-daemon-wrapper

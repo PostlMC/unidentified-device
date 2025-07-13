@@ -1,2 +1,8 @@
 #!/bin/bash
-exec /lib64/ld-linux-x86-64.so.2 NIX_BINARY_PLACEHOLDER "$@"
+# Dynamically discover the real nix binary in the Nix store at runtime
+NIX_BINARY=$(find /var/lib/nix/store -name "nix" -type f -executable 2>/dev/null | head -1)
+if [ -z "$NIX_BINARY" ]; then
+    echo "ERROR: Could not find nix binary in store" >&2
+    exit 1
+fi
+exec "$NIX_BINARY" "$@"
