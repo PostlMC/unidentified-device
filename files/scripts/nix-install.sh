@@ -42,6 +42,7 @@ fi
 sed -i "s|NIX_BINARY_PLACEHOLDER|$NIX_BINARY|g" /usr/bin/nix
 
 chmod +x /usr/bin/nix
+chmod +x /usr/libexec/nix-setup.sh
 chmod +x /etc/profile.d/nix.sh
 
 echo "Nix base installation complete (Aurora-compatible)"
