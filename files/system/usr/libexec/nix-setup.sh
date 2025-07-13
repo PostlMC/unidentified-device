@@ -1,4 +1,5 @@
-#!/bin/bash
+#!/usr/bin/env bash
+
 set -euo pipefail
 
 if [ ! -f /var/lib/nix/.users-created ]; then

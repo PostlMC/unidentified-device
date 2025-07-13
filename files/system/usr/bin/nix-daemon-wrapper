@@ -1,10 +1,10 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 set -euo pipefail
 
 # Create runtime symlink for hardcoded paths
 mkdir -p /run/nix
-ln -sf /var/lib/nix/store/store /run/nix/store
+ln -sf /var/lib/nix/store /run/nix/store
 
 # Find the actual nix binary dynamically at runtime
 NIX_BINARY=$(find /var/lib/nix/store -name "nix" -type f -executable 2>/dev/null | head -1)
@@ -16,7 +16,7 @@ fi
 echo "Found nix binary at: $NIX_BINARY" >&2
 
 # Convert to symlink path to avoid glibc conflicts
-SYMLINK_BINARY="/run/nix/store/$(echo "$NIX_BINARY" | sed 's|/var/lib/nix/store/store/||')"
+SYMLINK_BINARY="/run/nix/store/$(echo "$NIX_BINARY" | sed 's|/var/lib/nix/store/||')"
 echo "Using symlink path: $SYMLINK_BINARY" >&2
 
 # Build comprehensive library path with Nix libraries first

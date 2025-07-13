@@ -17,7 +17,7 @@ curl --proto '=https' --tlsv1.2 -sSf -L https://install.determinate.systems/nix 
         bash -s -- install linux --no-confirm --init none --no-start-daemon
 
 # Move the Nix installation to /var/lib/nix (writable location)
-cp -r /nix/store /var/lib/nix/store
+cp -r /nix/store/* /var/lib/nix/store/
 cp -r /nix/var/nix/* /var/lib/nix/var/
 
 chmod +x /usr/bin/nix
