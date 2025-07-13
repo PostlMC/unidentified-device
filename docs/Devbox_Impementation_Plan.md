@@ -17,24 +17,24 @@ Install Determinate Nix on Aurora Linux (immutable OSTree system) with working m
 
 - Installs Determinate Nix to `/var/lib/nix/`
 - Moves store and state to `/var/lib/nix/store` and `/var/lib/nix/var/`
-- Patches wrapper at `/var/usrlocal/bin/nix` with actual binary path
+- Patches wrapper at `/usr/bin/nix` with actual binary path
 - Installs environment script at `/etc/profile.d/nix.sh`
 - Validates presence and permissions of key directories, indents output for clarity
 - Does **not** enable systemd services (handled in the recipe)
 
-### 2. Daemon Wrapper Template: [`files/system/var/usrlocal/share/nix-daemon-wrapper.template`](../../files/system/var/usrlocal/share/nix-daemon-wrapper.template)
+### 2. Daemon Wrapper Template: [`files/system/usr/share/nix-daemon-wrapper.template`](../../files/system/usr/share/nix-daemon-wrapper.template)
 
 - Necessary to ensure proper library pathing for Nix and to set up the runtime environment for the daemon.
 - The actual binary hash is patched in at runtime by the setup script.
 
-### 3. Setup Script: [`files/system/var/usrlocal/libexec/nix-setup.sh`](../../files/system/var/usrlocal/libexec/nix-setup.sh)
+### 3. Setup Script: [`files/system/usr/libexec/nix-setup.sh`](../../files/system/usr/libexec/nix-setup.sh)
 
 - Creates `nixbld` group and users if not present
-- Copies and patches daemon wrapper with correct binary hash to `/usr/local/bin/nix-daemon-wrapper`
-- Patches `/usr/local/bin/nix` wrapper with actual binary path if present (legacy support)
+- Copies and patches daemon wrapper with correct binary hash to `/usr/bin/nix-daemon-wrapper`
+- Patches `/usr/bin/nix` wrapper with actual binary path if present (legacy support)
 - Creates marker files to prevent re-running steps
 
-### 4. Wrapper Script: [`files/system/var/usrlocal/bin/nix`](../../files/system/var/usrlocal/bin/nix)
+### 4. Wrapper Script: [`files/system/usr/bin/nix`](../../files/system/usr/bin/nix)
 
 - Simple wrapper that uses the patched binary path
 - Patched by the install script to point to the actual Nix binary in the store
@@ -55,15 +55,15 @@ Install Determinate Nix on Aurora Linux (immutable OSTree system) with working m
 ### Build Time (Immutable Layer)
 
 1. **Nix Installation**: Store copied to `/var/lib/nix/store/`, state to `/var/lib/nix/var/`
-2. **Wrapper Script**: `/var/usrlocal/bin/nix` created and patched at install
+2. **Wrapper Script**: `/usr/bin/nix` created and patched at install
 3. **Environment**: `/etc/profile.d/nix.sh` sets `NIX_STORE_DIR="/run/nix/store"`
 4. **Services**: Both `nix-daemon.service` and `nix-setup.service` are enabled in the image recipe
-5. **Template**: Daemon wrapper template placed at `/usr/local/share/nix-daemon-wrapper.template`
+5. **Template**: Daemon wrapper template placed at `/usr/share/nix-daemon-wrapper.template`
 
 ### Runtime (First Boot)
 
 1. **User Creation**: `nix-setup.service` runs `nix-setup.sh`, creates nixbld group + users
-2. **Wrapper Creation**: Service copies and patches template to `/usr/local/bin/nix-daemon-wrapper`
+2. **Wrapper Creation**: Service copies and patches template to `/usr/bin/nix-daemon-wrapper`
 3. **Path Resolution**: Service finds actual binary hash and updates wrapper
 4. **Daemon Start**: `nix-daemon.service` starts using the runtime-created wrapper
 5. **Symlink Creation**: Wrapper creates `/run/nix/store -> /var/lib/nix/store/store/`

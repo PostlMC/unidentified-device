@@ -12,9 +12,9 @@ fi
 
 # Wrapper creation
 if [ ! -f /var/lib/nix/.wrapper-created ]; then
-    mkdir -p /usr/local/bin
-    cp /usr/local/share/nix-daemon-wrapper.template /usr/local/bin/nix-daemon-wrapper
-    chmod +x /usr/local/bin/nix-daemon-wrapper
+    mkdir -p /usr/bin
+    cp /usr/share/nix-daemon-wrapper.template /usr/bin/nix-daemon-wrapper
+    chmod +x /usr/bin/nix-daemon-wrapper
     touch /var/lib/nix/.wrapper-created
 fi
 
@@ -22,12 +22,12 @@ fi
 if [ ! -f /var/lib/nix/.template-patched ]; then
     BINARY_PATH=$(find /var/lib/nix/store -name "nix" -type f -executable 2>/dev/null | head -1)
     BINARY_HASH=$(basename $(dirname $(dirname $BINARY_PATH)))
-    sed -i "s/BINARY_HASH/$BINARY_HASH/g" /usr/local/bin/nix-daemon-wrapper
+    sed -i "s/BINARY_HASH/$BINARY_HASH/g" /usr/bin/nix-daemon-wrapper
     touch /var/lib/nix/.template-patched
 fi
 
-# Patch and ensure /usr/local/bin/nix wrapper
-if [ -f /usr/local/bin/nix ]; then
-    sed -i "s|NIX_BINARY_PLACEHOLDER|$BINARY_PATH|g" /usr/local/bin/nix
-    chmod +x /usr/local/bin/nix
+# Patch and ensure /usr/bin/nix wrapper
+if [ -f /usr/bin/nix ]; then
+    sed -i "s|NIX_BINARY_PLACEHOLDER|$BINARY_PATH|g" /usr/bin/nix
+    chmod +x /usr/bin/nix
 fi

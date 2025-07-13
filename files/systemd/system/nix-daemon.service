@@ -6,7 +6,7 @@ RequiresMountsFor=/var/lib/nix
 ConditionPathExists=/var/lib/nix/store
 
 [Service]
-ExecStart=/usr/local/bin/nix-daemon-wrapper
+ExecStart=/usr/bin/nix-daemon-wrapper
 KillMode=process
 LimitNOFILE=1048576
 

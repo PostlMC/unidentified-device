@@ -3,7 +3,7 @@
 set -euo pipefail
 
 echo "Validating files module actions..."
-for D in /etc/profile.d /var/usrlocal/bin /var/usrlocal/libexec /var/usrlocal/share; do
+for D in /etc/profile.d /usr/bin /usr/libexec /usr/share; do
     echo "Validating $D..."
     ls -la $D | sed 's/^/    /'
 done
@@ -39,9 +39,9 @@ if [ ! -x "$NIX_BINARY" ]; then
 fi
 
 # Update static nix wrapper script with actual binary path
-sed -i "s|NIX_BINARY_PLACEHOLDER|$NIX_BINARY|g" /var/usrlocal/bin/nix
+sed -i "s|NIX_BINARY_PLACEHOLDER|$NIX_BINARY|g" /usr/bin/nix
 
-chmod +x /var/usrlocal/bin/nix
+chmod +x /usr/bin/nix
 chmod +x /etc/profile.d/nix.sh
 
 echo "Nix base installation complete (Aurora-compatible)"
@@ -57,7 +57,7 @@ if [ ! -d "/var/lib/nix/var/profiles" ]; then
     exit 1
 fi
 
-if [ ! -f "/var/usrlocal/bin/nix" ]; then
+if [ ! -f "/usr/bin/nix" ]; then
     echo "ERROR: Nix wrapper script not created"
     exit 1
 fi

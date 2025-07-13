@@ -6,7 +6,7 @@
 NIX_BINARY=$(find /var/lib/nix/store -name "nix" -type f -executable 2>/dev/null | head -1)
 if [ -n "$NIX_BINARY" ]; then
     NIX_BIN_DIR=$(dirname "$NIX_BINARY")
-    export PATH="/usr/local/bin:$NIX_BIN_DIR:$PATH"
+    export PATH="/usr/bin:$NIX_BIN_DIR:$PATH"
 
     # Find ALL library directories but exclude problematic system libraries
     ALL_LIB_DIRS=$(find /var/lib/nix/store -name "lib" -type d 2>/dev/null | grep -v -E "(glibc|gcc|binutils)" | tr '\n' ':' 2>/dev/null || echo "")
