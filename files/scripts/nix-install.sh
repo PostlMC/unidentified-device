@@ -2,12 +2,15 @@
 
 set -euo pipefail
 
+echo "Validating files module actions..."
+for D in /etc/profile.d /var/usrlocal/bin /var/usrlocal/libexec /var/usrlocal/share; do
+    echo "Validating $D..."
+    ls -la $D | sed 's/^/    /'
+done
+
 echo "Installing Determinate Nix for Aurora Linux (immutable system)..."
 
-# Install basic dependencies that might be needed
-dnf install -y which findutils
-
-# Create target directories for ALL Nix data (everything goes in /var/lib/nix when we're done)
+# Create target directories for ALL Nix data
 mkdir -p /var/lib/nix/var
 
 # Install Nix to a temporary location first
@@ -35,23 +38,11 @@ if [ ! -x "$NIX_BINARY" ]; then
     exit 1
 fi
 
-# Copy static nix wrapper script and replace placeholder with actual path
-# cp /files/system/var/usrlocal/bin/nix /usr/local/bin/nix
-sed -i "s|NIX_BINARY_PLACEHOLDER|$NIX_BINARY|g" /usr/local/bin/nix
-chmod +x /usr/local/bin/nix
+# Update static nix wrapper script with actual binary path
+sed -i "s|NIX_BINARY_PLACEHOLDER|$NIX_BINARY|g" /var/usrlocal/bin/nix
 
-# Copy static nix environment setup script
-# mkdir -p /etc/profile.d
-# cp /files/system/etc/profile.d/nix.sh /etc/profile.d/nix.sh
+chmod +x /var/usrlocal/bin/nix
 chmod +x /etc/profile.d/nix.sh
-
-# Copy static nix-daemon systemd service file
-# mkdir -p /etc/systemd/system
-# cp /files/system/etc/systemd/system/nix-daemon.service /etc/systemd/system/nix-daemon.service
-
-# Enable the new services
-systemctl enable nix-setup.service
-systemctl enable nix-daemon.service
 
 echo "Nix base installation complete (Aurora-compatible)"
 
@@ -66,10 +57,9 @@ if [ ! -d "/var/lib/nix/var/profiles" ]; then
     exit 1
 fi
 
-if [ ! -f "/usr/local/bin/nix" ]; then
+if [ ! -f "/var/usrlocal/bin/nix" ]; then
     echo "ERROR: Nix wrapper script not created"
     exit 1
 fi
 
-echo ""
 echo "Nix installation complete!"

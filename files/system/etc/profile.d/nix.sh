@@ -1,4 +1,6 @@
-# Nix environment setup for Aurora (immutable system)
+# if [ -e '/nix/var/nix/profiles/default/etc/profile.d/nix-daemon.sh' ]; then
+#     . '/nix/var/nix/profiles/default/etc/profile.d/nix-daemon.sh'
+# fi
 
 # Find the nix binary dynamically
 NIX_BINARY=$(find /var/lib/nix/store -name "nix" -type f -executable 2>/dev/null | head -1)
