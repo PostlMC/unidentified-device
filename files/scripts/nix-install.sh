@@ -35,13 +35,10 @@ if [ ! -x "$NIX_BINARY" ]; then
     exit 1
 fi
 
-# Ensure /usr/bin exists
-# mkdir -p /usr/bin 2>/dev/null || true
-
 # Copy static nix wrapper script and replace placeholder with actual path
-# cp /files/system/usr/local/bin/nix /usr/bin/nix
-sed -i "s|NIX_BINARY_PLACEHOLDER|$NIX_BINARY|g" /usr/bin/nix
-chmod +x /usr/bin/nix
+# cp /files/system/var/usrlocal/bin/nix /usr/local/bin/nix
+sed -i "s|NIX_BINARY_PLACEHOLDER|$NIX_BINARY|g" /usr/local/bin/nix
+chmod +x /usr/local/bin/nix
 
 # Copy static nix environment setup script
 # mkdir -p /etc/profile.d
@@ -69,7 +66,7 @@ if [ ! -d "/var/lib/nix/var/profiles" ]; then
     exit 1
 fi
 
-if [ ! -f "/usr/bin/nix" ]; then
+if [ ! -f "/usr/local/bin/nix" ]; then
     echo "ERROR: Nix wrapper script not created"
     exit 1
 fi

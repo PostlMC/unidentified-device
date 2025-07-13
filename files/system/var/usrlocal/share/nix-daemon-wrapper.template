@@ -12,4 +12,4 @@ export NIX_DAEMON_SOCKET_PATH="/var/lib/nix/daemon-socket/socket"
 
 mkdir -p /var/lib/nix/daemon-socket
 
-exec /lib64/ld-linux-x86-64.so.2 /run/nix/store/BINARY_HASH-nix-2.29.1/bin/nix --extra-experimental-features nix-command --extra-experimental-features flakes daemon "$@"
+exec /lib64/ld-linux-x86-64.so.2 /run/nix/store/BINARY_HASH-nix-2.29.1/bin/nix --extra-experimental-features nix-command --extra-experimental-features flakes daemon "$@" 
