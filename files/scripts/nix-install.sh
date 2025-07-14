@@ -5,7 +5,7 @@ set -euo pipefail
 echo "Installing Determinate Nix for Aurora Linux (immutable system)..."
 
 # Create target directories for ALL Nix data
-mkdir -p /var/lib/nix/var
+mkdir -p /var/lib/nix/{var,store}
 
 # Install Nix to a temporary location first
 export NIX_INSTALLER_TARBALL_PATH="/tmp/nix-installer"
